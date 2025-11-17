@@ -49,7 +49,7 @@ class JSONResponse(object):
         resp.data = data
         return resp
 
-#응답값 : JSON
+
 class APIView(View):
     """
     Django view的父类, 和django-rest-framework的用法基本一致

@@ -44,7 +44,7 @@ class ProblemIOModeSerializer(serializers.Serializer):
                 raise serializers.ValidationError("Invalid io file name format")
         return attrs
 
-#문제 출제 요소들
+
 class CreateOrEditProblemSerializer(serializers.Serializer):
     _id = serializers.CharField(max_length=32, allow_blank=True, allow_null=True)
     title = serializers.CharField(max_length=1024)

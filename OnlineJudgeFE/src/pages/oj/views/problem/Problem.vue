@@ -45,10 +45,32 @@
 
     <div class="right-panel">
       <h3>코드 작성 및 제출</h3>
-      <router-view />
+
+      <Card :padding="20" id="submit-code" dis-hover>
+        <CodeMirror :value.sync="code"
+                    :languages="problem.languages"
+                    :language="language"
+                    :theme="theme"
+                    @resetCode="onResetToTemplate"
+                    @changeTheme="onChangeTheme"
+                    @changeLang="onChangeLang" />
+        <Row type="flex" justify="space-between">
+          <Col :span="10">
+            <div class="status" v-if="statusVisible">
+              <template v-if="!contestID || (contestID && OIContestRealTimePermission)">
+                <span>{{$t('m.Status')}}</span>
+                <Tag type="dot" :color="submissionStatus.color" @click.native="handleRoute('/status/' + submissionId)">
+                  {{$t('m.' + submissionStatus.text.replace(/ /g, "_"))}}
+                </Tag>
+              </template>
+            </div>
+          </Col>
+        </Row>
+      </Card>
     </div>
   </div>
 </template>
+
 
 <script>
   import {mapGetters, mapActions} from 'vuex'
