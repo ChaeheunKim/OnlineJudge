@@ -155,8 +155,31 @@
             <el-col :span="24" v-for="(v, k) in template" :key="'template'+k">
               <el-form-item>
                 <el-checkbox v-model="v.checked">{{ k }}</el-checkbox>
+
+                <!-- 빈칸 여부 체크박스 기능 -->
+                <el-checkbox v-if="v.checked" >blank problem</el-checkbox>
                 <div v-if="v.checked">
-                  <code-mirror v-model="v.code" :mode="v.mode"></code-mirror>
+                  <code-mirror :ref="'codeMirror_' + k" v-model="v.code" :mode="v.mode"></code-mirror>
+
+                  <!-- 선택 영역을 빈칸으로 만들기 버튼 -->
+                  <el-button
+                    type="primary"
+                    size="mini"
+                    @click="makeBlank(v, k)"
+                    style="margin-top: 5px; color: #fff;"
+                  >
+                    create blank
+                  </el-button>
+
+                  <!-- 빈칸 목록 보여주기 -->
+                  <div v-if="v.blanks && v.blanks.length" style="margin-top: 10px;">
+                    <strong>blank list:</strong>
+                    <ul>
+                      <li v-for="(blank, index) in v.blanks" :key="blank.id">
+                        {{ blank.text }}
+                      </li>
+                    </ul>
+                </div>
                 </div>
               </el-form-item>
             </el-col>
@@ -404,6 +427,7 @@
               data[item] = {checked: true, code: this.problem.template[item], mode: langConfig.content_type}
             }
           } else {
+            // 빈칸 수정
             data[item] = this.template[item]
           }
         }
@@ -506,6 +530,37 @@
             customClass: 'dialog-compile-error'
           })
         })
+      },
+      // 빈칸 메소드
+      makeBlank (v, lang) {
+        const cmRef = this.$refs['codeMirror_' + lang]
+        if (!cmRef || !cmRef[0]) {
+          this.$message.error('CodeMirror 인스턴스를 가져올 수 없습니다.')
+          return
+        }
+
+        const cm = cmRef[0].$el.__vue__ // CodeMirror Vue 인스턴스 가져오기
+        const selection = cm.getSelection()
+        if (!selection) {
+          this.$message.warning('먼저 코드 영역을 선택하세요.')
+          return
+        }
+
+        const blankId = Date.now() // 고유 ID
+        const blankText = `{{BLANK:${blankId}}}`
+        const start = cm.getCursor('start')
+        const end = cm.getCursor('end')
+
+        // 선택 영역 치환
+        const before = v.code.slice(0, cm.indexFromPos(start))
+        const after = v.code.slice(cm.indexFromPos(end))
+        v.code = before + blankText + after
+
+        // 빈칸 목록 업데이트
+        if (!v.blanks) v.blanks = []
+        v.blanks.push({id: blankId, text: selection})
+
+        cm.focus()
       },
       submit () {
         if (!this.problem.samples.length) {
