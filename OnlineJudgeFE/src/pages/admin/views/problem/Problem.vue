@@ -159,27 +159,51 @@
                 <!-- 빈칸 여부 체크박스 기능 -->
                 <el-checkbox v-if="v.checked" >blank problem</el-checkbox>
                 <div v-if="v.checked">
-                  <code-mirror :ref="'codeMirror_' + k" v-model="v.code" :mode="v.mode"></code-mirror>
+                  <code-mirror  v-model="v.code" :mode="v.mode" :ref="'codeMirror_' + k"></code-mirror>
 
                   <!-- 선택 영역을 빈칸으로 만들기 버튼 -->
                   <el-button
                     type="primary"
                     size="mini"
                     @click="makeBlank(v, k)"
-                    style="margin-top: 5px; color: #fff;"
+                    style="margin-top: 5px; color: #fff; float: right;"
                   >
-                    create blank
+                    + 선택영역을 빈칸으로 추가
                   </el-button>
 
                   <!-- 빈칸 목록 보여주기 -->
-                  <div v-if="v.blanks && v.blanks.length" style="margin-top: 10px;">
-                    <strong>blank list:</strong>
-                    <ul>
-                      <li v-for="(blank, index) in v.blanks" :key="blank.id">
-                        {{ blank.text }}
-                      </li>
-                    </ul>
-                </div>
+                  <Card v-if="v.blanks && v.blanks.length" style="margin-top: 10px;">
+                    <CardHeader>
+                      <div class="flex items-center justify-between">
+                        <CardTitle>빈칸 목록 ({{ v.blanks.length }}개)</CardTitle>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div class="space-y-2 max-h-[200px] overflow-y-auto">
+                        <div
+                          v-for="(blank, index) in v.blanks"
+                          :key="blank.id"
+                          class="flex items-center justify-between p-2 bg-gray-50 border border-gray-200 rounded-md"
+                        >
+
+                          <!-- 빈칸 코드 영역 -->
+                          <code class="flex-1 bg-yellow-50 px-2 py-1 rounded border border-yellow-200 ml-2 break-all">
+                            {{ blank.text }}
+                          </code>
+
+                          <!-- 삭제 버튼 -->
+                          <el-button
+                            type="text"
+                            size="mini"
+                            class="text-red-600 hover:text-red-700"
+                            @click="removeBlank(v, blank.id)"
+                          >
+                            <i class="el-icon-delete"></i>
+                          </el-button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               </el-form-item>
             </el-col>
@@ -532,14 +556,19 @@
         })
       },
       // 빈칸 메소드
-      makeBlank (v, lang) {
-        const cmRef = this.$refs['codeMirror_' + lang]
-        if (!cmRef || !cmRef[0]) {
-          this.$message.error('CodeMirror 인스턴스를 가져올 수 없습니다.')
+      makeBlank (v, k) {
+        const refName = 'codeMirror_' + k
+        const codeMirrorComponent = this.$refs[refName][0]
+        console.log('codeMirrorComponent', codeMirrorComponent)
+        if (!codeMirrorComponent) {
+          this.$message.warning('CodeMirror를 찾을 수 없습니다.')
           return
         }
 
-        const cm = cmRef[0].$el.__vue__ // CodeMirror Vue 인스턴스 가져오기
+        // CodeMirror 인스턴스 가져오기
+        // -> 실제 인스턴스는 codeMirrorComponent.$refs.editor 안에 있음
+        const cm = codeMirrorComponent.$refs.editor.codemirror || codeMirrorComponent.$refs.editor.editor
+        console.log('cm', cm)
         const selection = cm.getSelection()
         if (!selection) {
           this.$message.warning('먼저 코드 영역을 선택하세요.')
@@ -547,7 +576,7 @@
         }
 
         const blankId = Date.now() // 고유 ID
-        const blankText = `{{BLANK:${blankId}}}`
+        const blankText = `----------------`
         const start = cm.getCursor('start')
         const end = cm.getCursor('end')
 
@@ -557,7 +586,7 @@
         v.code = before + blankText + after
 
         // 빈칸 목록 업데이트
-        if (!v.blanks) v.blanks = []
+        if (!v.blanks) this.$set(v, 'blanks', [])
         v.blanks.push({id: blankId, text: selection})
 
         cm.focus()
