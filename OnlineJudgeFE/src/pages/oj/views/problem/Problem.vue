@@ -63,7 +63,36 @@
                   {{$t('m.' + submissionStatus.text.replace(/ /g, "_"))}}
                 </Tag>
               </template>
+              <template v-else-if="this.contestID && !OIContestRealTimePermission">
+                <Alert type="success" show-icon>{{$t('m.Submitted_successfully')}}</Alert>
+              </template>
             </div>
+            <div v-else-if="problem.my_status === 0">
+              <Alert type="success" show-icon>{{$t('m.You_have_solved_the_problem')}}</Alert>
+            </div>
+            <div v-else-if="this.contestID && !OIContestRealTimePermission && submissionExists">
+              <Alert type="success" show-icon>{{$t('m.You_have_submitted_a_solution')}}</Alert>
+            </div>
+            <div v-if="contestEnded">
+              <Alert type="warning" show-icon>{{$t('m.Contest_has_ended')}}</Alert>
+            </div>
+          </Col>
+
+          <Col :span="12">
+            <template v-if="captchaRequired">
+              <div class="captcha-container">
+                <Tooltip v-if="captchaRequired" content="Click to refresh" placement="top">
+                  <img :src="captchaSrc" @click="getCaptchaSrc"/>
+                </Tooltip>
+                <Input v-model="captchaCode" class="captcha-code"/>
+              </div>
+            </template>
+            <Button type="warning" icon="edit" :loading="submitting" @click="submitCode"
+                    :disabled="problemSubmitDisabled || submitted"
+                    class="fl-right">
+              <span v-if="submitting">{{$t('m.Submitting')}}</span>
+              <span v-else>{{$t('m.Submit')}}</span>
+            </Button>
           </Col>
         </Row>
       </Card>
